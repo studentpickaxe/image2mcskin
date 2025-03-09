@@ -6,16 +6,6 @@ public record SkinInput(BufferedImage inputImage,
                         Position position,
                         FitMode fitMode) {
 
-    public SkinInput(BufferedImage inputImage) {
-        this(inputImage, Position.F, FitMode.FILL);
-    }
-
-    public SkinInput(BufferedImage inputImage,
-                     Position position) {
-        this(inputImage, position, FitMode.FILL);
-    }
-
-
     public enum Position {
         F, B, FO, BO;
 

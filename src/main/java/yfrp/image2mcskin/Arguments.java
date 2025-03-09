@@ -4,10 +4,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public record Arguments(List<SkinInput> skinInputs,
                         String outputPath,
@@ -42,32 +39,43 @@ public record Arguments(List<SkinInput> skinInputs,
         var background = DEFAULT_BACKGROUND_COLOR;
 
         for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
+            switch (args[i].toLowerCase()) {
                 case "-i", "--input" -> {
                     BufferedImage inputImage;
-                    SkinInput.Position position = DEFAULT_POSITION;
+                    List<SkinInput.Position> positions = new ArrayList<>(Collections.singletonList(DEFAULT_POSITION));
                     SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
                     if (++i < args.length) {
-                        File file = new File(args[i]);
+                        var filename = args[i];
+                        File file = new File(filename);
                         try {
                             inputImage = ImageIO.read(file);
                         } catch (IOException e) {
                             throw new IllegalArgumentException("Invalid input image file: " + file.getAbsolutePath());
                         }
+                        if (outputPath.isEmpty()) {
+                            var lastDotIndex = filename.lastIndexOf('.');
+                            outputPath = filename.substring(0, lastDotIndex) + "_output.png";
+                        }
                     } else {
                         throw new IllegalArgumentException(String.join(" ", args));
                     }
 
-                    if (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
-                        position = SkinInput.Position.fromString(args[++i]);
+                    while (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
+                        try {
+                            positions.add(SkinInput.Position.fromString(args[i + 1]));
+                        } catch (IllegalStateException ignored) {
+                        }
+                        i++;
                     }
 
                     if (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
                         fitMode = SkinInput.FitMode.fromString(args[++i]);
                     }
 
-                    skinInputs.add(new SkinInput(inputImage, position, fitMode));
+                    for (SkinInput.Position position : positions) {
+                        skinInputs.add(new SkinInput(inputImage, position, fitMode));
+                    }
                 }
 
                 case "-o", "--output" -> {
