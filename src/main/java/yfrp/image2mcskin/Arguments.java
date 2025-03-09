@@ -9,10 +9,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public record Arguments(List<SkinInput> pSkinInputs,
-                        String pOutputPath,
-                        boolean pSlim,
-                        int pBackgroundColor) {
+public record Arguments(List<SkinInput> skinInputs,
+                        String outputPath,
+                        boolean slim,
+                        int backgroundColor) {
+    private static final SkinInput.Position DEFAULT_POSITION = SkinInput.Position.F;
+    private static final SkinInput.FitMode DEFAULT_FIT_MODE = SkinInput.FitMode.COVER;
+    private static final boolean DEFAULT_IS_SLIM = false;
+    private static final int DEFAULT_BACKGROUND_COLOR = 0xFF000000;
 
     private static final Set<String> validParamHeader = new HashSet<>();
 
@@ -34,15 +38,15 @@ public record Arguments(List<SkinInput> pSkinInputs,
     public static Arguments fromStringArray(String[] args) {
         List<SkinInput> skinInputs = new ArrayList<>();
         var outputPath = "";
-        var slim = false;
-        var background = 0xFF000000;
+        var slim = DEFAULT_IS_SLIM;
+        var background = DEFAULT_BACKGROUND_COLOR;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "-i", "--input" -> {
                     BufferedImage inputImage;
-                    SkinInput.Position position = SkinInput.Position.F;
-                    SkinInput.FitMode fitMode = SkinInput.FitMode.FILL;
+                    SkinInput.Position position = DEFAULT_POSITION;
+                    SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
                     if (++i < args.length) {
                         File file = new File(args[i]);
@@ -108,7 +112,7 @@ public record Arguments(List<SkinInput> pSkinInputs,
 
     private static boolean isSlim(String modelStr) {
         return switch (modelStr.toLowerCase()) {
-            case "steve", "classic" -> false;
+            case "steve", "classic", "wide" -> false;
             case "alex", "slim" -> true;
             default -> throw new IllegalStateException("Unexpected value: " + modelStr);
         };

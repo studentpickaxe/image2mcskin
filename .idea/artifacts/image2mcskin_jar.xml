@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="image2mcskin:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/image2mcskin_jar</output-path>
+    <root id="archive" name="image2mcskin.jar">
+      <element id="module-output" name="image2mcskin" />
+    </root>
+  </artifact>
+</component>
