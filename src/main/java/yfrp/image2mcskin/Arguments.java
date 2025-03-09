@@ -65,6 +65,7 @@ public record Arguments(List<SkinInput> skinInputs,
                         try {
                             positions.add(SkinInput.Position.fromString(args[i + 1]));
                         } catch (IllegalStateException ignored) {
+                            break;
                         }
                         i++;
                     }
