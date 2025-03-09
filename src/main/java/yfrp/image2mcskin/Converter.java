@@ -81,14 +81,11 @@ public class Converter {
         }
 
         File output = new File(outputPath);
-        var parentDirStr = output.getParent();
-        if (parentDirStr == null) {
-            throw new NullPointerException("The output file is empty!");
-        }
-        File parentDir = new File(parentDirStr);
+        String absolutePathStr = output.getAbsolutePath();
+        File parentDir = new File(absolutePathStr.substring(0, absolutePathStr.length() - output.getName().length() - 1));
 
         if (parentDir.isFile()) {
-            throw new IOException("The parent directory of output already exists: " + output.getAbsolutePath());
+            throw new IOException("The parent directory of output already exists: " + absolutePathStr);
         }
 
         parentDir.mkdirs();
