@@ -9,11 +9,14 @@ import java.util.*;
 public record Arguments(List<SkinInput> skinInputs,
                         String outputPath,
                         boolean slim,
-                        int backgroundColor) {
+                        int backgroundColor,
+                        int resolution) {
+
     private static final SkinInput.Position DEFAULT_POSITION = SkinInput.Position.F;
     private static final SkinInput.FitMode DEFAULT_FIT_MODE = SkinInput.FitMode.COVER;
     private static final boolean DEFAULT_IS_SLIM = false;
     private static final int DEFAULT_BACKGROUND_COLOR = 0xFF000000;
+    static final int DEFAULT_RESOLUTION = 64;
 
     private static final Set<String> validParamHeader = new HashSet<>();
 
@@ -26,10 +29,12 @@ public record Arguments(List<SkinInput> skinInputs,
         validParamHeader.add("--model");
         validParamHeader.add("-b");
         validParamHeader.add("--background");
+        validParamHeader.add("-r");
+        validParamHeader.add("--resolution");
     }
 
     private static boolean isValidParamHeader(String paramHeader) {
-        return validParamHeader.contains(paramHeader);
+        return validParamHeader.contains(paramHeader.toLowerCase());
     }
 
     public static Arguments fromStringArray(String[] args) {
@@ -37,28 +42,29 @@ public record Arguments(List<SkinInput> skinInputs,
         var outputPath = "";
         var slim = DEFAULT_IS_SLIM;
         var background = DEFAULT_BACKGROUND_COLOR;
+        var resolution = DEFAULT_RESOLUTION;
 
         for (int i = 0; i < args.length; i++) {
+            if (i == args.length - 1) {
+                throw new IllegalArgumentException(String.join(" ", args));
+            }
+
             switch (args[i].toLowerCase()) {
                 case "-i", "--input" -> {
                     BufferedImage inputImage;
                     List<SkinInput.Position> positions = new ArrayList<>(Collections.singletonList(DEFAULT_POSITION));
                     SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
-                    if (++i < args.length) {
-                        var filename = args[i];
-                        File file = new File(filename);
-                        try {
-                            inputImage = ImageIO.read(file);
-                        } catch (IOException e) {
-                            throw new IllegalArgumentException("Invalid input image file: " + file.getAbsolutePath());
-                        }
-                        if (outputPath.isEmpty()) {
-                            var lastDotIndex = filename.lastIndexOf('.');
-                            outputPath = filename.substring(0, lastDotIndex) + "_output.png";
-                        }
-                    } else {
-                        throw new IllegalArgumentException(String.join(" ", args));
+                    var filename = args[++i];
+                    File file = new File(filename);
+                    try {
+                        inputImage = ImageIO.read(file);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Invalid input image file: " + file.getAbsolutePath());
+                    }
+                    if (outputPath.isEmpty()) {
+                        var lastDotIndex = filename.lastIndexOf('.');
+                        outputPath = filename.substring(0, lastDotIndex) + "_output.png";
                     }
 
                     while (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
@@ -79,44 +85,41 @@ public record Arguments(List<SkinInput> skinInputs,
                     }
                 }
 
-                case "-o", "--output" -> {
-                    if (++i < args.length) {
-                        outputPath = args[i];
-                    } else {
-                        throw new IllegalArgumentException(String.join(" ", args));
-                    }
-                }
+                case "-o", "--output" -> outputPath = args[++i];
 
-                case "-m", "--model" -> {
-                    if (++i < args.length) {
-                        slim = isSlim(args[i]);
-                    } else {
-                        throw new IllegalArgumentException(String.join(" ", args));
-                    }
-                }
+                case "-m", "--model" -> slim = isSlim(args[++i]);
 
                 case "-b", "--background" -> {
-                    if (++i < args.length) {
-                        String origin = args[i];
-                        String colorStr = origin.startsWith("#")
-                                          ? origin.substring(1)
-                                          : origin;
-                        try {
-                            background = 0xFF000000 + (Integer.parseInt(colorStr, 16) & 0x00FFFFFF);
-                        } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException("Illegal hex color value: #" + colorStr);
-                        }
-                    } else {
-                        throw new IllegalArgumentException(String.join(" ", args));
+                    String origin = args[++i];
+                    String colorStr = origin.startsWith("#")
+                                      ? origin.substring(1)
+                                      : origin;
+                    try {
+                        background = 0xFF000000 + (Integer.parseInt(colorStr, 16) & 0x00FFFFFF);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Illegal hex color value: #" + colorStr);
                     }
                 }
 
-                default -> {
-                    throw new IllegalArgumentException(String.format("Unexpected %s in %s. Valid: %s", args[i], String.join(" ", args), String.join(", ", validParamHeader)));
+                case "-r", "--resolution" -> {
+                    try {
+                        resolution = (Integer.parseInt(args[++i]));
+
+                        if (!((resolution & (resolution - 1)) == 0
+                              && resolution >= 64)) {
+                            throw new NumberFormatException();
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Illegal skin resolution. Expect: 64, 128, 256, ...");
+                    }
                 }
+
+                default -> throw new IllegalArgumentException(String.format(
+                        "Unexpected %s in %s. Valid: %s", args[i], String.join(" ", args), String.join(", ", validParamHeader)
+                ));
             }
         }
-        return new Arguments(skinInputs, outputPath, slim, background);
+        return new Arguments(skinInputs, outputPath, slim, background, resolution);
     }
 
     private static boolean isSlim(String modelStr) {

@@ -12,31 +12,31 @@ import java.util.Objects;
 public class Converter {
     private static final XYMapping[] WIDE = new XYMapping[]{
             new XYMapping(new XY(4, 0), new XY(8, 8),
-                          new XY(8, 8), new XY(24, 8), new XY(40, 8), new XY(56, 8)),
+                    new XY(8, 8), new XY(24, 8), new XY(40, 8), new XY(56, 8)),
             new XYMapping(new XY(0, 8), new XY(4, 12),
-                          new XY(44, 20), new XY(44, 52), new XY(44, 36), new XY(59, 52)),
+                    new XY(44, 20), new XY(44, 52), new XY(44, 36), new XY(59, 52)),
             new XYMapping(new XY(4, 8), new XY(8, 12),
-                          new XY(20, 20), new XY(32, 20), new XY(20, 36), new XY(32, 36)),
+                    new XY(20, 20), new XY(32, 20), new XY(20, 36), new XY(32, 36)),
             new XYMapping(new XY(12, 8), new XY(4, 12),
-                          new XY(36, 52), new XY(52, 20), new XY(52, 52), new XY(51, 36)),
+                    new XY(36, 52), new XY(52, 20), new XY(52, 52), new XY(51, 36)),
             new XYMapping(new XY(4, 20), new XY(4, 12),
-                          new XY(4, 20), new XY(28, 52), new XY(4, 36), new XY(12, 52)),
+                    new XY(4, 20), new XY(28, 52), new XY(4, 36), new XY(12, 52)),
             new XYMapping(new XY(8, 20), new XY(4, 12),
-                          new XY(20, 52), new XY(12, 20), new XY(4, 52), new XY(12, 36))
+                    new XY(20, 52), new XY(12, 20), new XY(4, 52), new XY(12, 36))
     };
     private static final XYMapping[] SLIM = new XYMapping[]{
             new XYMapping(new XY(3, 0), new XY(8, 8),
-                          new XY(8, 8), new XY(24, 8), new XY(40, 8), new XY(56, 8)),
+                    new XY(8, 8), new XY(24, 8), new XY(40, 8), new XY(56, 8)),
             new XYMapping(new XY(0, 8), new XY(3, 12),
-                          new XY(44, 20), new XY(43, 52), new XY(44, 36), new XY(60, 52)),
+                    new XY(44, 20), new XY(43, 52), new XY(44, 36), new XY(60, 52)),
             new XYMapping(new XY(3, 8), new XY(8, 12),
-                          new XY(20, 20), new XY(32, 20), new XY(20, 36), new XY(32, 36)),
+                    new XY(20, 20), new XY(32, 20), new XY(20, 36), new XY(32, 36)),
             new XYMapping(new XY(11, 8), new XY(3, 12),
-                          new XY(36, 52), new XY(51, 20), new XY(52, 52), new XY(52, 36)),
+                    new XY(36, 52), new XY(51, 20), new XY(52, 52), new XY(52, 36)),
             new XYMapping(new XY(3, 20), new XY(4, 12),
-                          new XY(4, 20), new XY(28, 52), new XY(4, 36), new XY(12, 52)),
+                    new XY(4, 20), new XY(28, 52), new XY(4, 36), new XY(12, 52)),
             new XYMapping(new XY(7, 20), new XY(4, 12),
-                          new XY(20, 52), new XY(12, 20), new XY(4, 52), new XY(12, 36))};
+                    new XY(20, 52), new XY(12, 20), new XY(4, 52), new XY(12, 36))};
     private static final XY WIDE_SIZE = new XY(16, 32);
     private static final XY SLIM_SIZE = new XY(14, 32);
 
@@ -70,10 +70,10 @@ public class Converter {
         int backgroundColor = pArguments.backgroundColor();
 
         // init
-        BufferedImage skin = initSkin(slim, backgroundColor);
+        BufferedImage skin = initSkin(slim, backgroundColor, pArguments.resolution());
 
         for (SkinInput skinInput : skinInputs) {
-            BufferedImage srcImage = resize(skinInput.inputImage(), slim, skinInput.fitMode());
+            BufferedImage srcImage = resize(skinInput.inputImage(), slim, skinInput.fitMode(), pArguments.resolution());
             SkinInput.Position position = skinInput.position();
 
             // draw
@@ -93,54 +93,86 @@ public class Converter {
         return ImageIO.write(skin, "png", output);
     }
 
-    private static BufferedImage initSkin(boolean slim, int backgroundColor)
+    private static BufferedImage initSkin(boolean slim,
+                                          int backgroundColor,
+                                          int resolution)
             throws IOException {
+
         BufferedImage skin = ImageIO.read(Objects.requireNonNull(Thread.currentThread().getContextClassLoader()
-                                                                       .getResource("skin_templates/" + (slim ? "slim.png" : "wide.png"))));
-        for (int y = 0; y < 64; y++) {
-            for (int x = 0; x < 64; x++) {
-                if (skin.getRGB(x, y) == 0xFF000000) {
-                    skin.setRGB(x, y, backgroundColor);
+                .getResource("skin_templates/" + (slim ? "slim.png" : "wide.png"))));
+
+        if (backgroundColor != 0xFF000000) {
+            // set background
+            for (int y = 0; y < 64; y++) {
+                for (int x = 0; x < 64; x++) {
+                    if (skin.getRGB(x, y) == 0xFF000000) {
+                        skin.setRGB(x, y, backgroundColor);
+                    }
                 }
             }
         }
 
-        return skin;
+        if (resolution == Arguments.DEFAULT_RESOLUTION) {
+            return skin;
+        }
+
+        BufferedImage scaled = new BufferedImage(resolution, resolution, BufferedImage.TYPE_INT_ARGB);
+        scaled.getGraphics().drawImage(skin, 0, 0, resolution, resolution, null);
+        return scaled;
     }
 
     private static void drawImageOnSkin(BufferedImage skin,
                                         BufferedImage srcImage,
                                         SkinInput.Position position,
                                         boolean slim) {
+        int m = skin.getWidth() / Arguments.DEFAULT_RESOLUTION;
 
         for (XYMapping mapping : (slim ? SLIM : WIDE)) {
-            XY srcO = mapping.srcO;
-            XY size = mapping.size;
-            XY skinO = mapping.of(position);
 
-            for (int y = 0; y < size.y; y++) {
-                for (int x = 0; x < size.x; x++) {
-                    skin.setRGB(skinO.x + x, skinO.y + y, srcImage.getRGB(srcO.x + x, srcO.y + y));
+            int sizeX = mapping.size.x * m;
+            int sizeY = mapping.size.y * m;
+            int srcOX = mapping.srcO.x * m;
+            int srcOY = mapping.srcO.y * m;
+            int skinOX = mapping.of(position).x * m;
+            int skinOY = mapping.of(position).y * m;
+
+            for (int x = 0; x < sizeX; x++) {
+                for (int y = 0; y < sizeY; y++) {
+                    skin.setRGB(
+                            skinOX + x, skinOY + y,
+                            srcImage.getRGB(srcOX + x, srcOY + y)
+                    );
                 }
             }
+
         }
     }
 
     private static BufferedImage resize(BufferedImage origin,
                                         boolean slim,
-                                        SkinInput.FitMode fitMode) {
+                                        SkinInput.FitMode fitMode,
+                                        int skinResolution) {
+        /*
+          ow, oh    <=>  origin width, height
+          tw, th    <=>  target width, height
+          twC, thC  <=>  width, height to cover target size
+         */
+
+        int m = skinResolution / Arguments.DEFAULT_RESOLUTION;
+
         int ow = origin.getWidth();
         int oh = origin.getHeight();
 
         XY size = slim ? SLIM_SIZE : WIDE_SIZE;
-        int tw = size.x;
-        int th = size.y;
-        int twC = size.x;
-        int thC = size.y;
+        int tw = size.x * m;
+        int th = size.y * m;
+        int twC = tw;
+        int thC = th;
 
         if (fitMode == SkinInput.FitMode.COVER) {
-            double ratio = Math.max((double) tw / ow,
-                                    (double) th / oh);
+            double ratio = Math.max(
+                    (double) tw / ow,
+                    (double) th / oh);
             twC = (int) (ow * ratio);
             thC = (int) (oh * ratio);
         }
