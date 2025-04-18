@@ -18,6 +18,10 @@ public record SkinInput(BufferedImage inputImage,
                 default -> throw new IllegalStateException("Unexpected value: " + positionStr.toUpperCase());
             };
         }
+
+        public boolean isOuterLayer() {
+            return this == FO || this == BO;
+        }
     }
 
     public enum FitMode {

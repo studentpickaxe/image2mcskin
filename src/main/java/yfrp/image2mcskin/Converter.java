@@ -50,6 +50,7 @@ public class Converter {
                                     XY skinO_IB,
                                     XY skinO_OF,
                                     XY skinO_OB) {
+
         XY of(SkinInput.Position position) {
             return switch (position) {
                 case F -> this.skinO_IF;
@@ -66,18 +67,19 @@ public class Converter {
 
         List<SkinInput> skinInputs = pArguments.skinInputs();
         String outputPath = pArguments.outputPath();
+        int resolution = pArguments.resolution();
         boolean slim = pArguments.slim();
         int backgroundColor = pArguments.backgroundColor();
 
         // init
-        BufferedImage skin = initSkin(slim, backgroundColor, pArguments.resolution());
+        BufferedImage skin = initSkin(resolution, slim, backgroundColor);
 
         for (SkinInput skinInput : skinInputs) {
-            BufferedImage srcImage = resize(skinInput.inputImage(), slim, skinInput.fitMode(), pArguments.resolution());
+            BufferedImage srcImage = resize(skinInput.inputImage(), resolution, slim, skinInput.fitMode());
             SkinInput.Position position = skinInput.position();
 
             // draw
-            drawImageOnSkin(skin, srcImage, position, slim);
+            drawImageOnSkin(skin, srcImage, position, slim, backgroundColor);
         }
 
         File output = new File(outputPath);
@@ -93,10 +95,9 @@ public class Converter {
         return ImageIO.write(skin, "png", output);
     }
 
-    private static BufferedImage initSkin(boolean slim,
-                                          int backgroundColor,
-                                          int resolution)
-            throws IOException {
+    private static BufferedImage initSkin(int resolution,
+                                          boolean slim,
+                                          int backgroundColor) throws IOException {
 
         BufferedImage skin = ImageIO.read(Objects.requireNonNull(Thread.currentThread().getContextClassLoader()
                 .getResource("skin_templates/" + (slim ? "slim.png" : "wide.png"))));
@@ -124,7 +125,9 @@ public class Converter {
     private static void drawImageOnSkin(BufferedImage skin,
                                         BufferedImage srcImage,
                                         SkinInput.Position position,
-                                        boolean slim) {
+                                        boolean slim,
+                                        int backgroundColor) {
+
         int m = skin.getWidth() / Arguments.DEFAULT_RESOLUTION;
 
         for (XYMapping mapping : (slim ? SLIM : WIDE)) {
@@ -138,10 +141,12 @@ public class Converter {
 
             for (int x = 0; x < sizeX; x++) {
                 for (int y = 0; y < sizeY; y++) {
-                    skin.setRGB(
-                            skinOX + x, skinOY + y,
-                            srcImage.getRGB(srcOX + x, srcOY + y)
-                    );
+
+                    int color = srcImage.getRGB(srcOX + x, srcOY + y);
+                    skin.setRGB(skinOX + x, skinOY + y,
+                            (position.isOuterLayer()
+                             ? color
+                             : blendColors(backgroundColor, color)));
                 }
             }
 
@@ -149,9 +154,9 @@ public class Converter {
     }
 
     private static BufferedImage resize(BufferedImage origin,
+                                        int skinResolution,
                                         boolean slim,
-                                        SkinInput.FitMode fitMode,
-                                        int skinResolution) {
+                                        SkinInput.FitMode fitMode) {
         /*
           ow, oh    <=>  origin width, height
           tw, th    <=>  target width, height
@@ -186,5 +191,25 @@ public class Converter {
         result.getGraphics().drawImage(scaled, 0, 0, tw, th, x, y, (twC - x), (thC - y), null);
 
         return result;
+    }
+
+    private static int blendColors(int bgColor, int fgColor) {
+
+        int bgR = (bgColor >> 16) & 0xFF;
+        int bgG = (bgColor >> 8) & 0xFF;
+        int bgB = bgColor & 0xFF;
+
+        int fgA = (fgColor >> 24) & 0xFF;
+        int fgR = (fgColor >> 16) & 0xFF;
+        int fgG = (fgColor >> 8) & 0xFF;
+        int fgB = fgColor & 0xFF;
+
+        float alpha = fgA / 255.0f;
+
+        int outR = Math.round(fgR * alpha + bgR * (1 - alpha));
+        int outG = Math.round(fgG * alpha + bgG * (1 - alpha));
+        int outB = Math.round(fgB * alpha + bgB * (1 - alpha));
+
+        return 0xFF000000 | (outR << 16) | (outG << 8) | outB;
     }
 }

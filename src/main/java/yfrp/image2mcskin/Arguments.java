@@ -8,9 +8,9 @@ import java.util.*;
 
 public record Arguments(List<SkinInput> skinInputs,
                         String outputPath,
+                        int resolution,
                         boolean slim,
-                        int backgroundColor,
-                        int resolution) {
+                        int backgroundColor) {
 
     private static final SkinInput.Position DEFAULT_POSITION = SkinInput.Position.F;
     private static final SkinInput.FitMode DEFAULT_FIT_MODE = SkinInput.FitMode.COVER;
@@ -25,12 +25,12 @@ public record Arguments(List<SkinInput> skinInputs,
         validParamHeader.add("--input");
         validParamHeader.add("-o");
         validParamHeader.add("--output");
+        validParamHeader.add("-r");
+        validParamHeader.add("--resolution");
         validParamHeader.add("-m");
         validParamHeader.add("--model");
         validParamHeader.add("-b");
         validParamHeader.add("--background");
-        validParamHeader.add("-r");
-        validParamHeader.add("--resolution");
     }
 
     private static boolean isValidParamHeader(String paramHeader) {
@@ -87,20 +87,6 @@ public record Arguments(List<SkinInput> skinInputs,
 
                 case "-o", "--output" -> outputPath = args[++i];
 
-                case "-m", "--model" -> slim = isSlim(args[++i]);
-
-                case "-b", "--background" -> {
-                    String origin = args[++i];
-                    String colorStr = origin.startsWith("#")
-                                      ? origin.substring(1)
-                                      : origin;
-                    try {
-                        background = 0xFF000000 + (Integer.parseInt(colorStr, 16) & 0x00FFFFFF);
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Illegal hex color value: #" + colorStr);
-                    }
-                }
-
                 case "-r", "--resolution" -> {
                     try {
                         resolution = (Integer.parseInt(args[++i]));
@@ -114,12 +100,27 @@ public record Arguments(List<SkinInput> skinInputs,
                     }
                 }
 
+                case "-m", "--model" -> slim = isSlim(args[++i]);
+
+                case "-b", "--background" -> {
+                    String origin = args[++i];
+                    String colorStr = origin.startsWith("#")
+                                      ? origin.substring(1)
+                                      : origin;
+                    try {
+                        var inputColor = Integer.parseInt(colorStr, 16);
+                        background = inputColor | 0xFF000000;
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Illegal hex color value: #" + colorStr);
+                    }
+                }
+
                 default -> throw new IllegalArgumentException(String.format(
                         "Unexpected %s in %s. Valid: %s", args[i], String.join(" ", args), String.join(", ", validParamHeader)
                 ));
             }
         }
-        return new Arguments(skinInputs, outputPath, slim, background, resolution);
+        return new Arguments(skinInputs, outputPath, resolution, slim, background);
     }
 
     private static boolean isSlim(String modelStr) {
