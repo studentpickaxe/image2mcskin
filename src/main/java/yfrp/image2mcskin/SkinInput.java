@@ -3,13 +3,13 @@ package yfrp.image2mcskin;
 import java.awt.image.BufferedImage;
 
 public record SkinInput(BufferedImage inputImage,
-                        Position position,
+                        Face face,
                         FitMode fitMode) {
 
-    public enum Position {
+    public enum Face {
         F, B, FO, BO;
 
-        public static Position fromString(String positionStr) {
+        public static Face fromString(String positionStr) {
             return switch (positionStr.toUpperCase()) {
                 case "F" -> F;
                 case "B" -> B;
