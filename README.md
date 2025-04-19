@@ -19,7 +19,7 @@
         <th> 描述 </th>
     </tr>
     <tr>
-        <td> <code>-i</code>, <code>--input &lt;Path&gt; [&lt;Face&gt; [&lt;FitMode&gt;]]</code> </td>
+        <td> <code>-i</code>, <code>--input &lt;Path&gt; [&lt;Face&gt;] [&lt;FitMode&gt;]</code> </td>
         <td style="text-align: center;" rowspan="3"> 定义源图片路径，转换后的面，和适应模式。 </td>
     </tr>
     <tr>
