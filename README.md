@@ -87,12 +87,12 @@
     </tr>
     <tr>
         <td style="text-align: center;"> <code>&lt;RGB&gt;</code> </td>
-        <td style="text-align: center;"> <code>000000</code> ~ <code>FFFFFF</code> </td>
+        <td style="text-align: center;"> <code>000000</code> - <code>FFFFFF</code> </td>
         <td style="text-align: center;"> RGB，如包含&nbsp;Alpha&nbsp;值则丢弃 </td>
     </tr>
     <tr>
         <td style="text-align: center;"> <code>&lt;ARGB&gt;</code> </td>
-        <td style="text-align: center;"> <code>00000000</code> ~ <code>FFFFFFFF</code> </td>
+        <td style="text-align: center;"> <code>00000000</code> - <code>FFFFFFFF</code> </td>
         <td style="text-align: center;"> ARGB </td>
     </tr>
     <tr>

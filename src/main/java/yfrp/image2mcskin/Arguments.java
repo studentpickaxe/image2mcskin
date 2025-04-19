@@ -46,44 +46,48 @@ public record Arguments(List<SkinInput> skinInputs,
         var slim = DEFAULT_IS_SLIM;
         var background = DEFAULT_BACKGROUND_COLOR;
 
-        for (int i = 0; i < args.length; i++) {
-            if (i == args.length - 1) {
+        for (Util.Index i = new Util.Index();
+             i.v() < args.length;
+             i.inc()) {
+
+            if (i.v() == args.length - 1) {
                 throw new IllegalArgumentException(String.join(" ", args));
             }
 
-            switch (args[i].toLowerCase()) {
-                case "-i", "--input" -> {
-                    var result = processInputParam(args, i, skinInputs, outputPath);
-                    i = result.newIndex;
-                    outputPath = result.outputPath;
+            var paramHeader = args[i.v()].toLowerCase();
+            if (isValidParamHeader(paramHeader)) {
+                try {
+                    switch (paramHeader) {
+                        case "-i", "--input" -> outputPath = processInputParam(args, i, skinInputs, outputPath);
+
+                        case "-f", "--face" -> outputPath = processFaceParam(args, i, skinInputs, outputPath);
+
+                        case "-o", "--output" -> outputPath = args[i.inc()];
+
+                        case "-r", "--resolution" -> resolution = parseResolution(args[i.inc()]);
+
+                        case "-m", "--model" -> slim = isSlim(args[i.inc()]);
+
+                        case "-b", "--background" -> background = parseBackground(args[i.inc()]);
+                    }
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(
+                            "Illegal argument in: " + Util.highlightError(args, i.v())
+                    );
+                } catch (IllegalStateException e) {
+                    throw new IllegalArgumentException(
+                            "Invalid state of enum in: " + Util.highlightError(args, i.v())
+                    );
                 }
-
-                case "-f", "--face" -> {
-                    var result = processFaceParam(args, i, skinInputs, outputPath);
-                    i = result.newIndex;
-                    outputPath = result.outputPath;
-                }
-
-                case "-o", "--output" -> outputPath = args[++i];
-
-                case "-r", "--resolution" -> resolution = parseResolution(args[++i]);
-
-                case "-m", "--model" -> slim = isSlim(args[++i]);
-
-                case "-b", "--background" -> background = parseBackground(args[++i]);
-
-                default -> throw new IllegalArgumentException(String.format(
-                        "Unexpected param header %s in \"%s\". Valid: %s", args[i], String.join(" ", args), String.join(" ", validParamHeader)
-                ));
-
+            } else {
+                throw new IllegalArgumentException(
+                        "Unexpected param header: " + Util.highlightError(args, i.v())
+                );
             }
+
         }
 
         return new Arguments(skinInputs, outputPath, resolution, slim, background);
-    }
-
-    private record InputParamResult(int newIndex,
-                                    String outputPath) {
     }
 
     private record InputImageResult(BufferedImage inputImage,
@@ -108,29 +112,29 @@ public record Arguments(List<SkinInput> skinInputs,
         return new InputImageResult(inputImage, outputPath);
     }
 
-    private static InputParamResult processInputParam(String[] args,
-                                                      int i,
-                                                      List<SkinInput> skinInputs,
-                                                      String outputPath) {
+    private static String processInputParam(String[] args,
+                                            Util.Index i,
+                                            List<SkinInput> skinInputs,
+                                            String outputPath) {
         BufferedImage inputImage;
         List<SkinInput.Face> faces = new ArrayList<>();
         SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
-        var inputImageResult = parseInputImage(args[++i], outputPath);
+        var inputImageResult = parseInputImage(args[i.inc()], outputPath);
         inputImage = inputImageResult.inputImage;
         outputPath = inputImageResult.outputPath;
 
-        while (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
+        while (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
             try {
-                faces.add(SkinInput.Face.fromString(args[i + 1]));
+                faces.add(SkinInput.Face.fromString(args[i.v() + 1]));
             } catch (IllegalStateException ignored) {
                 break;
             }
-            i++;
+            i.inc();
         }
 
-        if (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
-            fitMode = SkinInput.FitMode.fromString(args[++i]);
+        if (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
+            fitMode = SkinInput.FitMode.fromString(args[i.inc()]);
         }
 
         if (faces.isEmpty()) {
@@ -141,36 +145,36 @@ public record Arguments(List<SkinInput> skinInputs,
             }
         }
 
-        return new InputParamResult(i, outputPath);
+        return outputPath;
     }
 
-    private static InputParamResult processFaceParam(String[] args,
-                                                     int i,
-                                                     List<SkinInput> skinInputs,
-                                                     String outputPath) {
+    private static String processFaceParam(String[] args,
+                                           Util.Index i,
+                                           List<SkinInput> skinInputs,
+                                           String outputPath) {
         BufferedImage inputImage;
         SkinInput.Face face;
         SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
-        face = SkinInput.Face.fromString(args[++i]);
+        face = SkinInput.Face.fromString(args[i.inc()]);
 
-        if (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
-            var inputImageResult = parseInputImage(args[++i], outputPath);
+        if (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
+            var inputImageResult = parseInputImage(args[i.inc()], outputPath);
             inputImage = inputImageResult.inputImage;
             outputPath = inputImageResult.outputPath;
         } else {
             throw new IllegalArgumentException(String.format(
-                    "Missing input image file in: \"%s %s\"", args[i - 1], args[i]
+                    "Missing input image file in: \"%s %s\"", args[i.v() - 1], args[i.inc()]
             ));
         }
 
-        if (i + 1 < args.length && !isValidParamHeader(args[i + 1])) {
-            fitMode = SkinInput.FitMode.fromString(args[++i]);
+        if (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
+            fitMode = SkinInput.FitMode.fromString(args[i.inc()]);
         }
 
         skinInputs.add(new SkinInput(inputImage, face, fitMode));
 
-        return new InputParamResult(i, outputPath);
+        return outputPath;
     }
 
     private static int parseResolution(String resolutionStr) {

@@ -11,9 +11,10 @@ public class Main {
             if (Converter.export(arguments)) {
                 System.out.println("Successfully exported to " + new File(arguments.outputPath()).getAbsolutePath());
             }
+            System.in.read();
 
-        } catch (IllegalArgumentException e) {
-
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 }

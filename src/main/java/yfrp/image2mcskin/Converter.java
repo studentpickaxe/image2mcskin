@@ -146,7 +146,7 @@ public class Converter {
                     skin.setRGB(skinOX + x, skinOY + y,
                             (face.isOuterLayer()
                              ? color
-                             : blendColors(backgroundColor, color)));
+                             : Util.blendColors(backgroundColor, color)));
                 }
             }
 
@@ -191,34 +191,5 @@ public class Converter {
         result.getGraphics().drawImage(scaled, 0, 0, tw, th, x, y, (twC - x), (thC - y), null);
 
         return result;
-    }
-
-    private static int blendColors(int bgColor, int fgColor) {
-
-        int fgA = (fgColor >> 24) & 0xFF;
-        switch (fgA) {
-            case 0xFF -> {
-                return fgColor;
-            }
-            case 0x00 -> {
-                return bgColor;
-            }
-        }
-
-        int bgR = (bgColor >> 16) & 0xFF;
-        int bgG = (bgColor >> 8) & 0xFF;
-        int bgB = bgColor & 0xFF;
-
-        int fgR = (fgColor >> 16) & 0xFF;
-        int fgG = (fgColor >> 8) & 0xFF;
-        int fgB = fgColor & 0xFF;
-
-        float alpha = fgA / 255.0f;
-
-        int outR = Math.round(fgR * alpha + bgR * (1 - alpha));
-        int outG = Math.round(fgG * alpha + bgG * (1 - alpha));
-        int outB = Math.round(fgB * alpha + bgB * (1 - alpha));
-
-        return 0xFF000000 | (outR << 16) | (outG << 8) | outB;
     }
 }
