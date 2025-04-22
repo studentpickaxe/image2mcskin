@@ -15,4 +15,8 @@ public class SkinData {
             new ModelCube(-4, 12, -2, -4, 12, 4, 32, 48),
             new ModelCube(0, 0, -2, 4, 12, 4, 0, 16),
             new ModelCube(0, 0, -2, -4, 12, 4, 16, 48));
+
+    public static SkinModel of(boolean isSlim) {
+        return isSlim ? SLIM : WIDE;
+    }
 }
