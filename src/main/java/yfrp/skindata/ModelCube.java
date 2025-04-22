@@ -66,6 +66,10 @@ public class ModelCube {
         return lz;
     }
 
+    public BoundingBox[] getFaceTextures() {
+        return new BoundingBox[]{faceTextureU, faceTextureD, faceTextureR, faceTextureF, faceTextureL, faceTextureB};
+    }
+
     public BoundingBox faceTextureU() {
         return faceTextureU;
     }
