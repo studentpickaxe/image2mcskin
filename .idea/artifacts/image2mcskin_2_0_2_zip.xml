@@ -1,8 +1,8 @@
 <component name="ArtifactManager">
-  <artifact name="image2mcskin-2.0.1-zip">
-    <output-path>$PROJECT_DIR$/out/artifacts/image2mcskin_2_0_1_zip</output-path>
+  <artifact name="image2mcskin-2.0.2-zip">
+    <output-path>$PROJECT_DIR$/out/artifacts/image2mcskin_2_0_2_zip</output-path>
     <root id="root">
-      <element id="archive" name="image2skin-2.0.1.zip">
+      <element id="archive" name="image2skin-2.0.2.zip">
         <element id="file-copy" path="$PROJECT_DIR$/README.md" />
         <element id="artifact" artifact-name="image2mcskin:jar" />
       </element>

@@ -1,10 +1,11 @@
 package yfrp.image2mcskin;
 
 import org.jetbrains.annotations.Nullable;
+import yfrp.image2mcskin.skintool.SkinImage;
 
 import java.io.File;
 
-public class Main {
+public class ConsoleMain {
     public static void main(String[] args) {
         try {
 
@@ -21,9 +22,6 @@ public class Main {
             if (skinImage.export(outputPath)) {
                 System.out.println("Successfully exported " + outputPath);
             }
-
-            System.out.println("Press any key to continue...");
-            System.in.read();
 
         } catch (SkinToolIllegalArgumentException e) {
             System.out.println(e.getMessage());

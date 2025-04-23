@@ -1,4 +1,4 @@
-package yfrp.skindata;
+package yfrp.image2mcskin.skindata;
 
 public class Cube {
     private final int ox, oy, oz;

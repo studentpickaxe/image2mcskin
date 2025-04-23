@@ -1,94 +1,10 @@
-package yfrp.image2mcskin;
+package yfrp.image2mcskin.skintool;
 
-import yfrp.skindata.BoundingBox;
+import yfrp.image2mcskin.skindata.BoundingBox;
 
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
 class Util {
-
-    public static void main(String[] args) {
-        System.out.println(highlightError(args, 3));
-    }
-
-    static class Index {
-        private int value;
-
-        Index() {
-            value = 0;
-        }
-
-        Index(int defaultValue) {
-            value = defaultValue;
-        }
-
-        int v() {
-            return value;
-        }
-
-        int inc() {
-            return ++value;
-        }
-
-        int inc(int increment) {
-            value += increment;
-            return value;
-        }
-    }
-
-    static String highlightError(String[] stringArr,
-                                 int errorIndex) {
-        if (errorIndex >= stringArr.length) {
-            throw new IndexOutOfBoundsException(String.format("Index %s out of bounds %s", errorIndex, stringArr.length));
-        }
-        String[] arr = Arrays.copyOf(stringArr, stringArr.length);
-
-        if (errorIndex >= 0) {
-            arr[errorIndex] = "\u001b[1m\u001b[31m" + arr[errorIndex] + "\u001b[0m\u001b[4m";
-        }
-
-        return ("\u001b[4m" + String.join(" ", arr) + "\u001b[0m");
-    }
-
-    static int blendColors(int bgColor, int fgColor) {
-
-        int bgA = (bgColor >> 24) & 0xFF;
-        int fgA = (fgColor >> 24) & 0xFF;
-
-        if (fgA == 0xFF || bgA == 0x00) {
-            return fgColor;
-        }
-        if (fgA == 0x00) {
-            return bgColor;
-        }
-
-        int bgR = (bgColor >> 16) & 0xFF;
-        int bgG = (bgColor >> 8) & 0xFF;
-        int bgB = bgColor & 0xFF;
-
-        int fgR = (fgColor >> 16) & 0xFF;
-        int fgG = (fgColor >> 8) & 0xFF;
-        int fgB = fgColor & 0xFF;
-
-        float bgAlpha = fgA / 255.0f;
-        float fgAlpha = fgA / 255.0f;
-        float outAlpha = fgAlpha + bgAlpha * (1 - fgAlpha);
-
-        int outR, outG, outB;
-        if (outAlpha > 0) {
-            outR = Math.round((fgR * fgAlpha + bgR * bgAlpha * (1 - fgAlpha)) / outAlpha);
-            outG = Math.round((fgG * fgAlpha + bgG * bgAlpha * (1 - fgAlpha)) / outAlpha);
-            outB = Math.round((fgB * fgAlpha + bgB * bgAlpha * (1 - fgAlpha)) / outAlpha);
-        } else {
-            outR = 0;
-            outG = 0;
-            outB = 0;
-        }
-
-        int outA = Math.round(outAlpha * 255);
-
-        return (outA << 24) | (outR << 16) | (outG << 8) | outB;
-    }
 
     private static int interpolateColors(int color1, int color2, double ratio) {
         int a1 = (color1 >> 24) & 0xFF;
@@ -137,26 +53,23 @@ class Util {
                       BufferedImage dst,
                       BoundingBox dstBox) {
 
+        var lx = srcBox.lx();
+        var ly = srcBox.ly();
+
         var sox = srcBox.ox();
         var soy = srcBox.oy();
-        var slx = srcBox.lx();
-        var sly = srcBox.ly();
+
         var dox = dstBox.ox();
         var doy = dstBox.oy();
-        var dlx = dstBox.lx();
-        var dly = dstBox.ly();
 
-        if (src == dst) {
-            BufferedImage temp = src.getSubimage(sox, soy, slx, sly);
-            dst.getGraphics().drawImage(temp,
-                    dox, doy, dox + dlx, doy + dly,
-                    0, 0, slx, sly,
-                    null);
-        } else {
-            dst.getGraphics().drawImage(src,
-                    dox, doy, dox + dlx, doy + dly,
-                    sox, soy, sox + slx, soy + sly,
-                    null);
+        var temp = src.getSubimage(sox, soy, lx, ly);
+
+        for (var x = 0; x < lx; x++) {
+            for (var y = 0; y < ly; y++) {
+
+                var color = temp.getRGB(x, y);
+                dst.setRGB(dox + x, doy + y, color);
+            }
         }
     }
 

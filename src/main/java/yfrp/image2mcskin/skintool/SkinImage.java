@@ -1,9 +1,9 @@
-package yfrp.image2mcskin;
+package yfrp.image2mcskin.skintool;
 
-import yfrp.skindata.BoundingBox;
-import yfrp.skindata.Cube;
-import yfrp.skindata.SkinData;
-import yfrp.skindata.SkinModel;
+import yfrp.image2mcskin.skindata.BoundingBox;
+import yfrp.image2mcskin.skindata.Cube;
+import yfrp.image2mcskin.skindata.SkinData;
+import yfrp.image2mcskin.skindata.SkinModel;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -165,47 +165,21 @@ public class SkinImage {
         drawImage(image, face);
     }
 
-    public SkinImage drawGradientSides() {
-        for (var cube : skinModel.getInnerCubes()) {
-
-            Util.clone(skinImage, cube.getFaceTexture('F').getSide('L'),
-                    skinImage, cube.getFaceTexture('R').getSide('R'));
-            Util.clone(skinImage, cube.getFaceTexture('F').getSide('R'),
-                    skinImage, cube.getFaceTexture('L').getSide('L'));
-            Util.clone(skinImage, cube.getFaceTexture('F').getSide('U'),
-                    skinImage, cube.getFaceTexture('U').getSide('D'));
-            Util.clone(skinImage, cube.getFaceTexture('F').getSide('D'),
-                    skinImage, cube.getFaceTexture('D').getSide('D'));
-
-            Util.clone(skinImage, cube.getFaceTexture('B').getSide('L'),
-                    skinImage, cube.getFaceTexture('L').getSide('R'));
-            Util.clone(skinImage, cube.getFaceTexture('B').getSide('R'),
-                    skinImage, cube.getFaceTexture('R').getSide('L'));
-            Util.clone(skinImage, cube.getFaceTexture('B').getSide('U'),
-                    skinImage, cube.getFaceTexture('U').getSide('U').flipX());
-            Util.clone(skinImage, cube.getFaceTexture('B').getSide('D'),
-                    skinImage, cube.getFaceTexture('D').getSide('U').flipX());
-
-            Util.drawGradient(skinImage, cube.getFaceTexture('U'), 'y');
-            Util.drawGradient(skinImage, cube.getFaceTexture('D'), 'y');
-            Util.drawGradient(skinImage, cube.getFaceTexture('R'), 'X');
-            Util.drawGradient(skinImage, cube.getFaceTexture('L'), 'X');
-        }
-
-        return this;
-    }
-
     private void drawImage(BufferedImage image,
                            SkinInput.Face skinFace) {
 
-        Cube[] cubes = skinFace.isOuterLayer() ? skinModel.getOuterCubes()
-                                               : skinModel.getInnerCubes();
+        var isOuterLayer = skinFace.isOuterLayer();
+
+        Cube[] cubes = isOuterLayer ? skinModel.getOuterCubes()
+                                    : skinModel.getInnerCubes();
 
         for (var cube : cubes) {
-            BoundingBox faceTexture = skinFace.isBackFace() ? cube.getFaceTexture('B')
-                                                            : cube.getFaceTexture('F');
-            BoundingBox cubeFace = skinFace.isBackFace() ? cube.faceB()
-                                                         : cube.faceF();
+            var isBackFace = skinFace.isBackFace();
+
+            BoundingBox faceTexture = isBackFace ? cube.getFaceTexture('B')
+                                                 : cube.getFaceTexture('F');
+            BoundingBox cubeFace = isBackFace ? cube.faceB()
+                                              : cube.faceF();
 
             var tx1 = scale * faceTexture.ox();
             var ty1 = scale * faceTexture.oy();
@@ -221,8 +195,59 @@ public class SkinImage {
                     tx1, ty1, tx2, ty2,
                     fx1, fy1, fx2, fy2,
                     null);
+
+            if (isOuterLayer) {
+                if (isBackFace) {
+                    drawCubeEdgesB(cube);
+                } else {
+                    drawCubeEdgesF(cube);
+                }
+            }
         }
 
+    }
+
+    public SkinImage drawGradientSides() {
+
+        for (var cube : skinModel.getInnerCubes()) {
+            drawCubeEdgesF(cube);
+            drawCubeEdgesB(cube);
+            drawGradientColor(cube);
+        }
+
+        return this;
+    }
+
+    private void drawCubeEdgesF(Cube cube) {
+
+        Util.clone(skinImage, cube.getFaceTexture('F').getSide('L'),
+                skinImage, cube.getFaceTexture('R').getSide('R'));
+        Util.clone(skinImage, cube.getFaceTexture('F').getSide('R'),
+                skinImage, cube.getFaceTexture('L').getSide('L'));
+        Util.clone(skinImage, cube.getFaceTexture('F').getSide('U'),
+                skinImage, cube.getFaceTexture('U').getSide('D'));
+        Util.clone(skinImage, cube.getFaceTexture('F').getSide('D'),
+                skinImage, cube.getFaceTexture('D').getSide('D'));
+    }
+
+    private void drawCubeEdgesB(Cube cube) {
+
+        Util.clone(skinImage, cube.getFaceTexture('B').getSide('L'),
+                skinImage, cube.getFaceTexture('L').getSide('R'));
+        Util.clone(skinImage, cube.getFaceTexture('B').getSide('R'),
+                skinImage, cube.getFaceTexture('R').getSide('L'));
+        Util.clone(skinImage, cube.getFaceTexture('B').getSide('U'),
+                skinImage, cube.getFaceTexture('U').getSide('U').flipX());
+        Util.clone(skinImage, cube.getFaceTexture('B').getSide('D'),
+                skinImage, cube.getFaceTexture('D').getSide('U').flipX());
+    }
+
+    private void drawGradientColor(Cube cube) {
+
+        Util.drawGradient(skinImage, cube.getFaceTexture('U'), 'y');
+        Util.drawGradient(skinImage, cube.getFaceTexture('D'), 'y');
+        Util.drawGradient(skinImage, cube.getFaceTexture('R'), 'x');
+        Util.drawGradient(skinImage, cube.getFaceTexture('L'), 'x');
     }
 
     public boolean export(String path) {

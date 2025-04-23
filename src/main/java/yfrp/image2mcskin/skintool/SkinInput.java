@@ -1,4 +1,4 @@
-package yfrp.image2mcskin;
+package yfrp.image2mcskin.skintool;
 
 import java.awt.image.BufferedImage;
 

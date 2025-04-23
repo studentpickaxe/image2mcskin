@@ -2,6 +2,8 @@ package yfrp.image2mcskin;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import yfrp.image2mcskin.skintool.SkinImage;
+import yfrp.image2mcskin.skintool.SkinInput;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -49,6 +51,23 @@ public record Arguments(List<SkinInput> skinInputs,
     }
 
 
+    private static class Index {
+        private int value;
+
+        Index() {
+            value = 0;
+        }
+
+        int v() {
+            return value;
+        }
+
+        int inc() {
+            return ++value;
+        }
+    }
+
+
     public static Arguments fromStringArray(String[] args) {
         List<SkinInput> skinInputs = new ArrayList<>();
         OutputPath outputPath = new OutputPath(null, null);
@@ -57,7 +76,7 @@ public record Arguments(List<SkinInput> skinInputs,
         var background = SkinImage.DEFAULT_BACKGROUND_COLOR;
         var enableGradientSides = DEFAULT_GRADIENT_ENABLED;
 
-        for (Util.Index i = new Util.Index();
+        for (Index i = new Index();
              i.v() < args.length;
              i.inc()) {
 
@@ -97,7 +116,7 @@ public record Arguments(List<SkinInput> skinInputs,
         }
 
         if (skinInputs.isEmpty() || outputPath.directory == null || outputPath.filename == null) {
-            throw new IllegalArgumentException("Missing input image: " + Util.highlightError(args, -1));
+            throw new SkinToolIllegalArgumentException("Missing input image: ", args, -1);
         }
 
         return new Arguments(skinInputs, outputPath.directory, outputPath.filename, resolution, slim, background, enableGradientSides);
@@ -147,7 +166,7 @@ public record Arguments(List<SkinInput> skinInputs,
     }
 
     private static void processInputParam(String[] args,
-                                          Util.Index i,
+                                          Index i,
                                           List<SkinInput> skinInputs,
                                           OutputPath outputPath) {
         BufferedImage inputImage;
@@ -179,7 +198,7 @@ public record Arguments(List<SkinInput> skinInputs,
     }
 
     private static void processFaceParam(String[] args,
-                                         Util.Index i,
+                                         Index i,
                                          List<SkinInput> skinInputs,
                                          OutputPath outputPath) {
         BufferedImage inputImage;

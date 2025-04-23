@@ -1,4 +1,4 @@
-package yfrp.skindata;
+package yfrp.image2mcskin.skindata;
 
 public record BoundingBox(int ox, int oy,
                           int lx, int ly) {
