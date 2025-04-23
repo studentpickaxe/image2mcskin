@@ -26,22 +26,23 @@ class Util {
     }
 
     static void setColor(BufferedImage image,
-                         int x1, int x2,
-                         int y1, int y2,
+                         BoundingBox box,
                          int color) {
 
-        var xMin = Math.min(x1, x2);
-        var yMin = Math.min(y1, y2);
-        var xMax = Math.max(x1, x2);
-        var yMax = Math.max(y1, y2);
+        box = box.toPositiveL();
 
-        if (xMin < 0 || yMin < 0 ||
-            xMax > image.getWidth() || yMax > image.getHeight()) {
+        var x1 = box.ox();
+        var x2 = x1 + box.lx();
+        var y1 = box.oy();
+        var y2 = y1 + box.ly();
+
+        if (x1 < 0 || x2 > image.getWidth() ||
+            y1 < 0 || y2 > image.getHeight()) {
             throw new IndexOutOfBoundsException("Coordinates out of image bounds");
         }
 
-        for (int x = xMin; x < xMax; x++) {
-            for (int y = yMin; y < yMax; y++) {
+        for (int x = x1; x < x2; x++) {
+            for (int y = y1; y < y2; y++) {
                 image.setRGB(x, y, color);
             }
         }
@@ -53,24 +54,31 @@ class Util {
                       BufferedImage dst,
                       BoundingBox dstBox) {
 
-        var lx = srcBox.lx();
-        var ly = srcBox.ly();
+        var slx = srcBox.lx();
+        var sly = srcBox.ly();
 
-        var sox = srcBox.ox();
-        var soy = srcBox.oy();
+        boolean flipX = slx < 0;
+        boolean flipY = sly < 0;
 
-        var dox = dstBox.ox();
-        var doy = dstBox.oy();
+        var sox = flipX ? (srcBox.ox() + slx) : srcBox.ox();
+        var soy = flipY ? (srcBox.oy() + sly) : srcBox.oy();
+        slx = flipX ? -slx : slx;
+        sly = flipY ? -sly : sly;
 
-        var temp = src.getSubimage(sox, soy, lx, ly);
+        dstBox = flipX ? dstBox.flipX() : dstBox;
+        dstBox = flipY ? dstBox.flipY() : dstBox;
+        var dx1 = dstBox.ox();
+        var dy1 = dstBox.oy();
+        var dx2 = dx1 + dstBox.lx();
+        var dy2 = dy1 + dstBox.ly();
 
-        for (var x = 0; x < lx; x++) {
-            for (var y = 0; y < ly; y++) {
+        var temp = src.getSubimage(sox, soy, slx, sly);
 
-                var color = temp.getRGB(x, y);
-                dst.setRGB(dox + x, doy + y, color);
-            }
-        }
+        setColor(dst, dstBox, 0x00FFFFFF);
+        dst.getGraphics().drawImage(temp,
+                dx1, dy1, dx2, dy2,
+                0, 0, slx, sly,
+                null);
     }
 
     static void drawGradient(BufferedImage image,

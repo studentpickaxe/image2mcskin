@@ -52,15 +52,7 @@ public class SkinImage {
         for (var cube : skinModel.getInnerCubes()) {
             for (var faceTexture : cube.getFaceTextures()) {
 
-                var ox = faceTexture.ox();
-                var oy = faceTexture.oy();
-                var lx = faceTexture.lx();
-                var ly = faceTexture.ly();
-
-                Util.setColor(result,
-                        ox, ox + lx,
-                        oy, oy + ly,
-                        backgroundColor);
+                Util.setColor(result, faceTexture, backgroundColor);
             }
         }
 
