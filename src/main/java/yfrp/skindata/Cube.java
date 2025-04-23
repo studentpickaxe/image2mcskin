@@ -1,15 +1,16 @@
 package yfrp.skindata;
 
-public class ModelCube {
+public class Cube {
     private final int ox, oy, oz;
     private final int lx, ly, lz;
+    // 相对于玩家自身的 上, 下, 右, 前, 左, 后
     private final BoundingBox faceTextureU, faceTextureD, faceTextureR, faceTextureF, faceTextureL, faceTextureB;
     private final BoundingBox faceF, faceB;
 
 
-    public ModelCube(int ox, int oy, int oz,
-                     int lx, int ly, int lz,
-                     int textureOX, int textureOY) {
+    public Cube(int ox, int oy, int oz,
+                int lx, int ly, int lz,
+                int textureOX, int textureOY) {
         if (lx < 0) {
             ox += lx;
             lx = -lx;
@@ -42,6 +43,22 @@ public class ModelCube {
     }
 
 
+    public enum Face {
+        U, D, R, F, L, B;
+
+        public static Face of(char faceChar) {
+            return switch (Character.toUpperCase(faceChar)) {
+                case 'U' -> U;
+                case 'D' -> D;
+                case 'R' -> R;
+                case 'L' -> L;
+                case 'B' -> B;
+                default -> F;
+            };
+        }
+    }
+
+
     public int ox() {
         return ox;
     }
@@ -70,28 +87,19 @@ public class ModelCube {
         return new BoundingBox[]{faceTextureU, faceTextureD, faceTextureR, faceTextureF, faceTextureL, faceTextureB};
     }
 
-    public BoundingBox faceTextureU() {
-        return faceTextureU;
+    public BoundingBox getFaceTexture(Face face) {
+        return switch (face) {
+            case U -> faceTextureU;
+            case D -> faceTextureD;
+            case R -> faceTextureR;
+            case F -> faceTextureF;
+            case L -> faceTextureL;
+            case B -> faceTextureB;
+        };
     }
 
-    public BoundingBox faceTextureD() {
-        return faceTextureD;
-    }
-
-    public BoundingBox faceTextureR() {
-        return faceTextureR;
-    }
-
-    public BoundingBox faceTextureF() {
-        return faceTextureF;
-    }
-
-    public BoundingBox faceTextureL() {
-        return faceTextureL;
-    }
-
-    public BoundingBox faceTextureB() {
-        return faceTextureB;
+    public BoundingBox getFaceTexture(char face) {
+        return getFaceTexture(Face.of(face));
     }
 
     public BoundingBox faceF() {

@@ -1,22 +1,29 @@
 package yfrp.image2mcskin;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public record Arguments(List<SkinInput> skinInputs,
-                        String outputPath,
+                        @NotNull String outputDirectory,
+                        @NotNull String outputFilename,
                         int resolution,
                         boolean slim,
-                        int backgroundColor) {
+                        int backgroundColor,
+                        boolean enableGradientSides) {
 
     private static final SkinInput.Face DEFAULT_FACE = SkinInput.Face.F;
     private static final SkinInput.FitMode DEFAULT_FIT_MODE = SkinInput.FitMode.COVER;
-    static final int DEFAULT_RESOLUTION = 64;
-    private static final boolean DEFAULT_IS_SLIM = false;
-    private static final int DEFAULT_BACKGROUND_COLOR = 0xFF000000;
+    private static final boolean DEFAULT_GRADIENT_ENABLED = false;
 
     private static final Set<String> validParamHeader = new HashSet<>();
 
@@ -33,18 +40,22 @@ public record Arguments(List<SkinInput> skinInputs,
         validParamHeader.add("--model");
         validParamHeader.add("-b");
         validParamHeader.add("--background");
+        validParamHeader.add("-g");
+        validParamHeader.add("--gradient");
     }
 
     private static boolean isValidParamHeader(String paramHeader) {
         return validParamHeader.contains(paramHeader.toLowerCase());
     }
 
+
     public static Arguments fromStringArray(String[] args) {
         List<SkinInput> skinInputs = new ArrayList<>();
-        String outputPath = null;
-        var resolution = DEFAULT_RESOLUTION;
-        var slim = DEFAULT_IS_SLIM;
-        var background = DEFAULT_BACKGROUND_COLOR;
+        OutputPath outputPath = new OutputPath(null, null);
+        var resolution = SkinImage.DEFAULT_RESOLUTION;
+        var slim = SkinImage.DEFAULT_IS_SLIM;
+        var background = SkinImage.DEFAULT_BACKGROUND_COLOR;
+        var enableGradientSides = DEFAULT_GRADIENT_ENABLED;
 
         for (Util.Index i = new Util.Index();
              i.v() < args.length;
@@ -58,71 +69,92 @@ public record Arguments(List<SkinInput> skinInputs,
             if (isValidParamHeader(paramHeader)) {
                 try {
                     switch (paramHeader) {
-                        case "-i", "--input" -> outputPath = processInputParam(args, i, skinInputs, outputPath);
+                        case "-i", "--input" -> processInputParam(args, i, skinInputs, outputPath);
 
-                        case "-f", "--face" -> outputPath = processFaceParam(args, i, skinInputs, outputPath);
+                        case "-f", "--face" -> processFaceParam(args, i, skinInputs, outputPath);
 
-                        case "-o", "--output" -> outputPath = args[i.inc()];
+                        case "-o", "--output" -> parseOutputPath(args[i.inc()], outputPath);
 
                         case "-r", "--resolution" -> resolution = parseResolution(args[i.inc()]);
 
                         case "-m", "--model" -> slim = isSlim(args[i.inc()]);
 
                         case "-b", "--background" -> background = parseBackground(args[i.inc()]);
+
+                        case "-g", "--gradient" -> enableGradientSides = Boolean.parseBoolean(args[i.inc()]);
                     }
                 } catch (IllegalArgumentException e) {
-                    throw new IllegalArgumentException(
-                            "Illegal argument in: " + Util.highlightError(args, i.v())
-                    );
+                    throw new SkinToolIllegalArgumentException("Illegal argument in", args, i.v());
                 } catch (IllegalStateException e) {
-                    throw new IllegalArgumentException(
-                            "Invalid state of enum in: " + Util.highlightError(args, i.v())
-                    );
+                    throw new SkinToolIllegalArgumentException("Invalid state of enum in", args, i.v());
+                } catch (FileNotFoundException e) {
+                    throw new SkinToolIllegalArgumentException("Could not export in given output path", args, i.v());
                 }
             } else {
-                throw new IllegalArgumentException(
-                        "Unexpected param header: " + Util.highlightError(args, i.v())
-                );
+                throw new SkinToolIllegalArgumentException("Unexpected param header", args, i.v());
             }
 
         }
 
-        return new Arguments(skinInputs, outputPath, resolution, slim, background);
+        if (skinInputs.isEmpty() || outputPath.directory == null || outputPath.filename == null) {
+            throw new IllegalArgumentException("Missing input image: " + Util.highlightError(args, -1));
+        }
+
+        return new Arguments(skinInputs, outputPath.directory, outputPath.filename, resolution, slim, background, enableGradientSides);
     }
 
-    private record InputImageResult(BufferedImage inputImage,
-                                    String outputPath) {
+    private static class OutputPath {
+        @Nullable
+        String directory;
+        @Nullable
+        String filename;
+
+        OutputPath(@Nullable String directory,
+                   @Nullable String filename) {
+            this.directory = directory;
+            setFilename(filename);
+        }
+
+        void setFilename(@Nullable String filename) {
+            int dotIndex;
+            if (filename == null || (dotIndex = filename.lastIndexOf('.')) == -1) {
+                this.filename = filename;
+            } else {
+                this.filename = filename.substring(0, dotIndex);
+            }
+        }
     }
 
-    private static InputImageResult parseInputImage(String filename,
-                                                    String outputPath) {
+    private static BufferedImage parseInputImage(String filename,
+                                                 OutputPath outputPath) {
         BufferedImage inputImage;
 
-        File file = new File(filename);
+        File file = new File(filename).getAbsoluteFile();
         try {
             inputImage = ImageIO.read(file);
         } catch (IOException e) {
             throw new IllegalArgumentException("Invalid input image file: " + file.getAbsolutePath());
         }
-        if (outputPath == null) {
-            var lastDotIndex = filename.lastIndexOf('.');
-            outputPath = filename.substring(0, lastDotIndex) + "_output.png";
+
+        if (outputPath.directory == null) {
+            outputPath.directory = file.getParent();
+        }
+        if (outputPath.filename == null) {
+            outputPath.setFilename(file.getName());
         }
 
-        return new InputImageResult(inputImage, outputPath);
+        return inputImage;
     }
 
-    private static String processInputParam(String[] args,
-                                            Util.Index i,
-                                            List<SkinInput> skinInputs,
-                                            String outputPath) {
+    private static void processInputParam(String[] args,
+                                          Util.Index i,
+                                          List<SkinInput> skinInputs,
+                                          OutputPath outputPath) {
         BufferedImage inputImage;
         List<SkinInput.Face> faces = new ArrayList<>();
         SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
 
-        var inputImageResult = parseInputImage(args[i.inc()], outputPath);
-        inputImage = inputImageResult.inputImage;
-        outputPath = inputImageResult.outputPath;
+        inputImage = parseInputImage(args[i.inc()], outputPath);
 
         while (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
             try {
@@ -144,14 +176,12 @@ public record Arguments(List<SkinInput> skinInputs,
                 skinInputs.add(new SkinInput(inputImage, face, fitMode));
             }
         }
-
-        return outputPath;
     }
 
-    private static String processFaceParam(String[] args,
-                                           Util.Index i,
-                                           List<SkinInput> skinInputs,
-                                           String outputPath) {
+    private static void processFaceParam(String[] args,
+                                         Util.Index i,
+                                         List<SkinInput> skinInputs,
+                                         OutputPath outputPath) {
         BufferedImage inputImage;
         SkinInput.Face face;
         SkinInput.FitMode fitMode = DEFAULT_FIT_MODE;
@@ -159,9 +189,7 @@ public record Arguments(List<SkinInput> skinInputs,
         face = SkinInput.Face.fromString(args[i.inc()]);
 
         if (i.v() + 1 < args.length && !isValidParamHeader(args[i.v() + 1])) {
-            var inputImageResult = parseInputImage(args[i.inc()], outputPath);
-            inputImage = inputImageResult.inputImage;
-            outputPath = inputImageResult.outputPath;
+            inputImage = parseInputImage(args[i.inc()], outputPath);
         } else {
             throw new IllegalArgumentException(String.format(
                     "Missing input image file in: \"%s %s\"", args[i.v() - 1], args[i.inc()]
@@ -173,8 +201,51 @@ public record Arguments(List<SkinInput> skinInputs,
         }
 
         skinInputs.add(new SkinInput(inputImage, face, fitMode));
+    }
 
-        return outputPath;
+    private static void parseOutputPath(String pathStr,
+                                        OutputPath outputPath) throws FileNotFoundException {
+
+        var file = new File(pathStr).getAbsoluteFile();
+
+        if (!file.exists()) {
+
+            var bl = pathStr.endsWith("/") || pathStr.endsWith("\\");
+            var dirFile = bl ? file : file.getParentFile();
+
+            if (!dirFile.exists() && !dirFile.mkdirs()) {
+                throw new FileNotFoundException();
+            }
+        }
+
+        if (file.isDirectory()) {
+            outputPath.directory = file.getAbsolutePath();
+
+        } else {
+            outputPath.directory = file.getParent();
+            outputPath.setFilename(file.getName());
+        }
+
+        // if (file.isDirectory()) {
+        //     outputPath.directory = file.getAbsolutePath();
+        //
+        // } else if (file.isFile()) {
+        //     outputPath.directory = file.getParent();
+        //     outputPath.setFilename(file.getName());
+        //
+        // } else if (pathStr.endsWith("/") || pathStr.endsWith("\\")) {
+        //     if (!file.mkdirs()) {
+        //         throw new FileNotFoundException();
+        //     }
+        //     outputPath.directory = file.getAbsolutePath();
+        //
+        // } else {
+        //     if (!file.getParentFile().mkdirs()) {
+        //         throw new FileNotFoundException();
+        //     }
+        //     outputPath.directory = file.getParent();
+        //     outputPath.setFilename(file.getName());
+        // }
     }
 
     private static int parseResolution(String resolutionStr) {
@@ -213,5 +284,14 @@ public record Arguments(List<SkinInput> skinInputs,
             case "alex", "slim" -> true;
             default -> throw new IllegalStateException("Unexpected value: " + modelStr);
         };
+    }
+
+
+    @Deprecated
+    public static final int DEFAULT_RESOLUTION = SkinImage.DEFAULT_RESOLUTION;
+
+    @Deprecated
+    public String outputPath() {
+        return new File(outputDirectory, outputFilename).getAbsolutePath();
     }
 }

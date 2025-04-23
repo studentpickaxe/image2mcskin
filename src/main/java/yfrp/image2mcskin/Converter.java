@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 
+@Deprecated
 public class Converter {
     private static final XYMapping[] WIDE = new XYMapping[]{
             new XYMapping(new XY(4, 0), new XY(8, 8),

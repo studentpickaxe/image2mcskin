@@ -29,8 +29,8 @@
         <td> <code>-f</code>, <code>--face &lt;Face&gt; &lt;Path&gt; [&lt;FitMode&gt;]</code> </td>
     </tr>
     <tr>
-        <td> <code>-o</code>, <code>--output &lt;path&gt;</code> </td>
-        <td style="text-align: center;"> 定义导出的皮肤文件路径。 </td>
+        <td> <code>-o</code>, <code>--output &lt;Path&gt;</code> </td>
+        <td style="text-align: center;"> 定义导出的皮肤文件路径。 <br> 可仅给定导出文件夹。 </td>
     </tr>
     <tr>
         <td> <code>-r</code>, <code>--resolution &lt;int&gt;</code> </td>
@@ -43,6 +43,10 @@
     <tr>
         <td> <code>-b</code>, <code>--background &lt;RGB&gt;</code> </td>
         <td style="text-align: center;"> 定义背景颜色（默认&nbsp;000000）。 </td>
+    </tr>
+    <tr>
+        <td> <code>-g</code>, <code>--gradient &lt;boolean&gt;</code> </td>
+        <td style="text-align: center;"> 定义是否在皮肤侧边添加渐变色。 </td>
     </tr>
 </table>
 
@@ -83,7 +87,7 @@
     <tr>
         <td style="text-align: center;"> <code>&lt;Path&gt;</code> </td>
         <td style="text-align: center;"> 文件路径 </td>
-        <td style="text-align: center;"> 例：<code>C:\path\to\the\file</code> <code>directory/file</code> </td>
+        <td style="text-align: center;"> 例：<code>C:\path\to\the\file\</code> <code>directory/file.png</code> </td>
     </tr>
     <tr>
         <td style="text-align: center;"> <code>&lt;RGB&gt;</code> </td>

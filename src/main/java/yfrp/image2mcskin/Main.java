@@ -1,5 +1,7 @@
 package yfrp.image2mcskin;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 
 public class Main {
@@ -7,13 +9,53 @@ public class Main {
         try {
 
             Arguments arguments = Arguments.fromStringArray(args);
-            if (Converter.export(arguments)) {
-                System.out.println("Successfully exported to " + new File(arguments.outputPath()).getAbsolutePath());
+            SkinImage skinImage = new SkinImage(arguments.resolution(), arguments.slim(), arguments.backgroundColor())
+                    .draw(arguments.skinInputs());
+
+            if (arguments.enableGradientSides()) {
+                skinImage.drawGradientSides();
             }
+
+            var outputPath = getOutputPath(arguments.outputDirectory(), arguments.outputFilename() + "_output.png");
+
+            if (skinImage.export(outputPath)) {
+                System.out.println("Successfully exported " + outputPath);
+            }
+
+            System.out.println("Press any key to continue...");
             System.in.read();
 
-        } catch (Exception e) {
+        } catch (SkinToolIllegalArgumentException e) {
             System.out.println(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private static String getOutputPath(@Nullable String outputDirectory,
+                                        String defaultFilename) {
+
+        String baseName;
+        var extension = "";
+        int dotIndex = defaultFilename.lastIndexOf('.');
+
+        if (dotIndex == -1) {
+            baseName = defaultFilename;
+        } else {
+            baseName = defaultFilename.substring(0, dotIndex);
+            extension = defaultFilename.substring(dotIndex);
+        }
+
+        var candidateName = defaultFilename;
+        int counter = 1;
+        File candidateFile = new File(outputDirectory, candidateName);
+
+        while (candidateFile.exists()) {
+            candidateName = baseName + " (" + counter + ")" + extension;
+            candidateFile = new File(outputDirectory, candidateName);
+            counter++;
+        }
+
+        return candidateFile.getAbsolutePath();
     }
 }

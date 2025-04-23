@@ -7,7 +7,21 @@ public record SkinInput(BufferedImage inputImage,
                         FitMode fitMode) {
 
     public enum Face {
-        F, B, FO, BO;
+        F(false, false),
+        B(false, true),
+        FO(true, false),
+        BO(true, true);
+
+        private final boolean isOuterLayer;
+        private final boolean isBackFace;
+
+        Face(boolean isOuterLayer,
+             boolean isBackFace) {
+
+            this.isOuterLayer = isOuterLayer;
+            this.isBackFace = isBackFace;
+        }
+
 
         public static Face fromString(String positionStr) {
             return switch (positionStr.toUpperCase()) {
@@ -19,8 +33,13 @@ public record SkinInput(BufferedImage inputImage,
             };
         }
 
+
         public boolean isOuterLayer() {
-            return this == FO || this == BO;
+            return isOuterLayer;
+        }
+
+        public boolean isBackFace() {
+            return isBackFace;
         }
     }
 

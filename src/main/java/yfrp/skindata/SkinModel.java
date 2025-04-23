@@ -1,16 +1,31 @@
 package yfrp.skindata;
 
-import java.util.ArrayList;
-import java.util.List;
+public record SkinModel(CubeWithOuter cubeHead,
+                        CubeWithOuter cubeBody,
+                        CubeWithOuter cubeArmR,
+                        CubeWithOuter cubeArmL,
+                        CubeWithOuter cubeLegR,
+                        CubeWithOuter cubeLegL) {
 
-public record SkinModel(ModelCube cubeHead,
-                        ModelCube cubeBody,
-                        ModelCube cubeArmR,
-                        ModelCube cubeArmL,
-                        ModelCube cubeLegR,
-                        ModelCube cubeLegL) {
+    public Cube[] getInnerCubes() {
+        return new Cube[]{
+                cubeHead.innerCube(),
+                cubeBody.innerCube(),
+                cubeArmR.innerCube(),
+                cubeArmL.innerCube(),
+                cubeLegR.innerCube(),
+                cubeLegL.innerCube(),
+        };
+    }
 
-    public ModelCube[] getCubes() {
-        return new ModelCube[]{cubeHead, cubeBody, cubeArmR, cubeArmL, cubeLegR, cubeLegL};
+    public Cube[] getOuterCubes() {
+        return new Cube[]{
+                cubeHead.outerCube(),
+                cubeBody.outerCube(),
+                cubeArmR.outerCube(),
+                cubeArmL.outerCube(),
+                cubeLegR.outerCube(),
+                cubeLegL.outerCube(),
+        };
     }
 }
