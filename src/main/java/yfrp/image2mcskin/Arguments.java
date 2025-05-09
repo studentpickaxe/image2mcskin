@@ -85,32 +85,33 @@ public record Arguments(List<SkinInput> skinInputs,
             }
 
             var paramHeader = args[i.v()].toLowerCase();
-            if (isValidParamHeader(paramHeader)) {
-                try {
-                    switch (paramHeader) {
-                        case "-i", "--input" -> processInputParam(args, i, skinInputs, outputPath);
 
-                        case "-f", "--face" -> processFaceParam(args, i, skinInputs, outputPath);
-
-                        case "-o", "--output" -> parseOutputPath(args[i.inc()], outputPath);
-
-                        case "-r", "--resolution" -> resolution = parseResolution(args[i.inc()]);
-
-                        case "-m", "--model" -> slim = isSlim(args[i.inc()]);
-
-                        case "-b", "--background" -> background = parseBackground(args[i.inc()]);
-
-                        case "-g", "--gradient" -> enableGradientSides = Boolean.parseBoolean(args[i.inc()]);
-                    }
-                } catch (IllegalArgumentException e) {
-                    throw new SkinToolIllegalArgumentException("Illegal argument in", args, i.v());
-                } catch (IllegalStateException e) {
-                    throw new SkinToolIllegalArgumentException("Invalid state of enum in", args, i.v());
-                } catch (FileNotFoundException e) {
-                    throw new SkinToolIllegalArgumentException("Could not export in given output path", args, i.v());
-                }
-            } else {
+            if (!isValidParamHeader(paramHeader)) {
                 throw new SkinToolIllegalArgumentException("Unexpected param header", args, i.v());
+            }
+
+            try {
+                switch (paramHeader) {
+                    case "-i", "--input" -> processInputParam(args, i, skinInputs, outputPath);
+
+                    case "-f", "--face" -> processFaceParam(args, i, skinInputs, outputPath);
+
+                    case "-o", "--output" -> parseOutputPath(args[i.inc()], outputPath);
+
+                    case "-r", "--resolution" -> resolution = parseResolution(args[i.inc()]);
+
+                    case "-m", "--model" -> slim = isSlim(args[i.inc()]);
+
+                    case "-b", "--background" -> background = parseBackground(args[i.inc()]);
+
+                    case "-g", "--gradient" -> enableGradientSides = Boolean.parseBoolean(args[i.inc()]);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new SkinToolIllegalArgumentException("Illegal argument in", args, i.v());
+            } catch (IllegalStateException e) {
+                throw new SkinToolIllegalArgumentException("Invalid state of enum in", args, i.v());
+            } catch (FileNotFoundException e) {
+                throw new SkinToolIllegalArgumentException("Could not export in given output path", args, i.v());
             }
 
         }

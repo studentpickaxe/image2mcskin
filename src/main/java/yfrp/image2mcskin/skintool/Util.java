@@ -81,62 +81,78 @@ class Util {
                 null);
     }
 
+    private static void drawGradientX(BufferedImage image,
+                                      int ox, int lx,
+                                      int oy, int ly) {
+        if (lx < 2) {
+            return;
+        }
+
+        var x2 = ox + lx;
+        var y2 = oy + ly;
+
+        for (int y = oy; y < y2; y++) {
+
+            var color1 = image.getRGB(ox, y);
+            var color2 = image.getRGB(x2 - 1, y);
+
+            var j = lx - 1;
+            for (int i = 1; i < j; i++) {
+
+                var x = ox + i;
+                var ratio = (float) i / j;
+                var color = interpolateColors(color1, color2, ratio);
+
+                image.setRGB(x, y, color);
+            }
+        }
+
+    }
+
+    private static void drawGradientY(BufferedImage image,
+                                      int ox, int lx,
+                                      int oy, int ly) {
+        if (ly < 2) {
+            return;
+        }
+
+        var x2 = ox + lx;
+        var y2 = oy + ly;
+
+        for (int x = ox; x < x2; x++) {
+
+            var color1 = image.getRGB(x, oy);
+            var color2 = image.getRGB(x, y2 - 1);
+
+            var j = ly - 1;
+            for (int i = 1; i < j; i++) {
+
+                var y = oy + i;
+                var ratio = (float) i / j;
+                var color = interpolateColors(color1, color2, ratio);
+
+                image.setRGB(x, y, color);
+            }
+        }
+
+    }
+
     static void drawGradient(BufferedImage image,
                              BoundingBox box,
                              BoundingBox.Axis axis) {
 
         box = box.toPositiveL();
 
-        var x1 = box.ox();
+        var ox = box.ox();
         var lx = box.lx();
-        var x2 = x1 + lx;
 
-        var y1 = box.oy();
+        var oy = box.oy();
         var ly = box.ly();
-        var y2 = y1 + ly;
 
         if (axis == BoundingBox.Axis.Y) {
-            if (ly < 2) {
-                return;
-            }
-
-            for (int x = x1; x < x2; x++) {
-
-                var color1 = image.getRGB(x, y1);
-                var color2 = image.getRGB(x, y2 - 1);
-
-                var j = ly - 1;
-                for (int i = 1; i < j; i++) {
-
-                    var y = y1 + i;
-                    var ratio = (float) i / j;
-                    var color = interpolateColors(color1, color2, ratio);
-
-                    image.setRGB(x, y, color);
-                }
-            }
-
+            drawGradientY(image, ox, lx, oy, ly);
         } else {
-            if (lx < 2) {
-                return;
-            }
-
-            for (int y = y1; y < y2; y++) {
-
-                var color1 = image.getRGB(x1, y);
-                var color2 = image.getRGB(x2 - 1, y);
-
-                var j = lx - 1;
-                for (int i = 1; i < j; i++) {
-
-                    var x = x1 + i;
-                    var ratio = (float) i / j;
-                    var color = interpolateColors(color1, color2, ratio);
-
-                    image.setRGB(x, y, color);
-                }
-            }
-
+            drawGradientX(image, ox, lx, oy, ly);
         }
     }
 
